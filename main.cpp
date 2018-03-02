@@ -1,11 +1,12 @@
 #include <QCoreApplication>
-#include "redditapi.h"
+#include "glopbot.h"
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
-	RedditSession *ra = new RedditSession;
-	QMetaObject::invokeMethod(ra,"parseSettings",Qt::QueuedConnection);
+	GlopBot *bot = new GlopBot;
+	//RedditSession *ra = new RedditSession;
+	//QMetaObject::invokeMethod(ra,"parseSettings",Qt::QueuedConnection);
 	//QMetaObject::invokeMethod(ra,"testFunction",Qt::QueuedConnection);
 
 	return a.exec();

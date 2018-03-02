@@ -1,4 +1,4 @@
-#include "redditapi.h"
+#include "reddit_session.h"
 
 const QString RedditSession::clientID = "f3dZ8gIetXY69Q";
 const QString RedditSession::UserAgent = "pc:glop-bot:v0.0 (by /u/glop102)";
@@ -205,9 +205,9 @@ void RedditSession::testFunction(){
 
 	//------------------------------------------------------------------------------
 	// playing with reading data from a subreddit and what it returns
-	//auto reply = makeGETrequest("https://oauth.reddit.com/r/bottest");
-	//QString temp = QString::fromUtf8(reply->readAll());
-	//printf("subreddit data:\n%s\n",temp.toLatin1().data());
+	auto reply = makeGETrequest("https://oauth.reddit.com/r/bottest");
+	QString temp = QString::fromUtf8(reply->readAll());
+	printf("subreddit data:\n%s\n",temp.toLatin1().data());
 
 	//printf("headers:\n");
 	//for(auto x : reply->rawHeaderPairs()){

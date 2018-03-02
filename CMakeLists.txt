@@ -9,12 +9,12 @@ find_package(Qt5 COMPONENTS Core Gui Network REQUIRED)
 
 
 file(GLOB SOURCES
-	    *.h
-		*.cpp
-		configFileParser/glopConfig.*
-	)
-#qt5_add_resources()
+	*.h
+	*.cpp
+)
 
+add_subdirectory(redditapi)
+include_directories("redditapi")
 add_executable(${PROJECT_NAME} "main.cpp" ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Network)
+target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Network redditapi)
