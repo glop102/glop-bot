@@ -26,7 +26,7 @@ bool RedditSession::parseSettings(bool allow_example_firstRun){
 	}
 	//printf("Session token : %s\n",API_Session.toStdString().c_str());
 
-	testFunction();
+	//testFunction();
 	if(API_Session=="")
 		return false;
 	else

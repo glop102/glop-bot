@@ -28,6 +28,7 @@
 
 class RedditSession : public QObject{
 	Q_OBJECT
+protected:
 	static const QString clientID;
 	static const QString UserAgent;
 	static const QString redirectUri;

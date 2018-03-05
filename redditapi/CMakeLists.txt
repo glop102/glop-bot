@@ -11,10 +11,10 @@ set(API_SRCS
 	redditapi.h
 	reddit_session.h
 	reddit_session.cpp
-	reddit_parser.h
-	reddit_parser.cpp
 	reddit_subreddit.h
 	reddit_subreddit.cpp
+	reddit_post.h
+	reddit_post.cpp
 )
 set(CONFIG_SRCS
 	configFileParser/glopConfig.cpp

@@ -12,12 +12,22 @@ GlopBot::GlopBot() : QObject(0){
 }
 
 void GlopBot::mainProcess(){
-	if( ra == NULL){
-		ra = new RedditSession;
-		ra->parseSettings();
+	if( session == NULL){
+		session = new RedditSession;
+		session->parseSettings();
 	}
 
-	ra->testFunction();
+	//ra->testFunction();
+	//QByteArray temp = session->makeGETrequest("https://oauth.reddit.com/r/bottest/about")->readAll();
+	//printf("%s\n",temp.data());
+	//Reddit_Subreddit *test = new Reddit_Subreddit(session,"bottest");
+	//Reddit_Subreddit *test = new Reddit_Subreddit(session,"newsokur");
+	Reddit_Subreddit *test = new Reddit_Subreddit(session,"anime");
+	QList<Reddit_Post> p = test->getPosts(2);
+	//p[0].debug_print();
+	for(auto k : p){
+		k.debug_print();
+	}
 }
 
 void GlopBot::setProcessInterval(int seconds){

@@ -7,7 +7,7 @@
 
 class GlopBot : public QObject{
 	Q_OBJECT
-	RedditSession *ra = NULL;
+	RedditSession *session = NULL;
 	QTimer *recuringTimeout;
 public:
 	GlopBot();
