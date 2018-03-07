@@ -15,6 +15,8 @@ set(API_SRCS
 	reddit_subreddit.cpp
 	reddit_post.h
 	reddit_post.cpp
+	reddit_comment.h
+	reddit_comment.cpp
 )
 set(CONFIG_SRCS
 	configFileParser/glopConfig.cpp

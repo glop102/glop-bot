@@ -17,4 +17,9 @@ public slots:
 	void setProcessInterval(int seconds);
 };
 
+class Test{
+public:
+	QString strang;
+};
+
 #endif // GLOPBOT_H

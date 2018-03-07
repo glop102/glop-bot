@@ -85,6 +85,7 @@ void RedditSession::firstTimeRun_redirectedURL(QString URL){
 	makePOSTrequest("https://www.reddit.com/api/v1/access_token",
 					QString(("grant_type=authorization_code&code="+code.toStdString()+"&redirect_uri="+redirectUri.toStdString()).c_str())
 					);
+	reply->deleteLater();
 
 	//temp = QString::fromUtf8(reply->readAll());
 	//printf("reply : \n%s\n",temp.toStdString().c_str());
@@ -184,6 +185,7 @@ void RedditSession::refreshSession(){
 
 	Session_Time_Used.restart();
 	//printf("\n%s\n\n",top.toJson().data());
+	reply->deleteLater();
 }
 
 void RedditSession::testFunction(){
@@ -206,6 +208,7 @@ void RedditSession::testFunction(){
 	//------------------------------------------------------------------------------
 	// playing with reading data from a subreddit and what it returns
 	auto reply = makeGETrequest("https://oauth.reddit.com/r/bottest");
+	reply->deleteLater();
 	QString temp = QString::fromUtf8(reply->readAll());
 	printf("subreddit data:\n%s\n",temp.toLatin1().data());
 

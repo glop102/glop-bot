@@ -1,71 +1,58 @@
 #include "reddit_post.h"
 
-Reddit_Post::Reddit_Post(const QJsonObject &raw) : QObject(0){
+Reddit_Post::Reddit_Post(RedditSession *sess){
+	session	= sess;
+}
+Reddit_Post::Reddit_Post(const QString &url, RedditSession *sess){
+	session = sess;
+	QString scrubbed_url = url;
+	if(url.indexOf("http")!=0){
+		scrubbed_url = "https://oauth.reddit.com/";
+	}
+	auto reply = session->makeGETrequest(scrubbed_url);
+	reply->deleteLater();
+	QJsonDocument top = QJsonDocument::fromJson(reply->readAll());
+	if(! top.isArray()){
+		printf("url seemes to not be correct\n");
+		return;
+	}
+	parseJson(top.array()[0].toObject()["data"].toObject()["children"].toArray()[0].toObject()["data"].toObject());
+}
+Reddit_Post::Reddit_Post(const QJsonObject &raw,RedditSession* sess){
 	parseJson(raw);
+	session = sess;
 }
-Reddit_Post::Reddit_Post(const Reddit_Post &other){
-	*this = other;
+QString Reddit_Post::fixUrl(QString url){
+	url.replace("&amp;","&");
+	url.replace("&lt;","<");
+	url.replace("&gt;",">");
+	return url;
 }
-Reddit_Post& Reddit_Post::operator=(const Reddit_Post& other){
-	approved_at_utc = other.approved_at_utc;
-	approved_by = other.approved_by;
-	archived = other.archived;
-	author = other.author;
-	author_flair_text = other.author_flair_text;
-	banned_at_utc = other.banned_at_utc;
-	banned_by = other.banned_by;
-	can_gild = other.can_gild;
-	can_mod_post = other.can_mod_post;
-	clicked = other.clicked;
-	created_time = other.created_time; // seconds
-	created_time_utc = other.created_time_utc;
-	domain = other.domain;
-	edited = other.edited;
-	gilded = other.gilded;
-	hidden = other.hidden;
-	hide_score = other.hide_score;
-	id = other.id;
-	is_crosspostable = other.is_crosspostable;
-	is_reddit_media_domain = other.is_reddit_media_domain;
-	is_self = other.is_self;
-	is_video = other.is_video;
-	link_flair_text = other.link_flair_text;
-	locked = other.locked;
-	mod_note = other.mod_note;
-	mod_reason_by = other.mod_reason_by;
-	mod_reason_title = other.mod_reason_title;
-	name = other.name;
-	over_18 = other.over_18;
-	permalink = other.permalink;
-	pinned = other.pinned;
-	quarantine = other.quarantine;
-	removal_reason = other.removal_reason;
-	saved = other.saved;
-	selftext = other.selftext;
-	selftext_html = other.selftext_html;
-	spoiler = other.spoiler;
-	stickied = other.stickied;
-	subreddit = other.subreddit;
-	subreddit_id = other.subreddit_id;
-	subreddit_name_prefixed = other.subreddit_name_prefixed;
-	subreddit_type = other.subreddit_type;
-	thumbnail = other.thumbnail;
-	thumbnail_height = other.thumbnail_height;
-	thumbnail_width = other.thumbnail_width;
-	title = other.title;
-	url = other.url;
-	visited = other.visited;
+QList<Reddit_Comment> Reddit_Post::getComments(){
+	if(session == NULL){
+		printf("Tried to get comments when object has no session to use\n");
+		return QList<Reddit_Comment>();
+	}
+	auto reply = session->makeGETrequest("https://oauth.reddit.com/"+permalink);
+	auto raw = reply->readAll();
+	//printf("%s\n",raw.data());
+	auto top = QJsonDocument::fromJson(raw);
+	QJsonArray comments = top.array()[1].toObject()["data"].toObject()["children"].toArray();
+	QList<Reddit_Comment> comms;
+	printf("number of comments : %d\n",comments.size());
+	for(auto c : comments){
+		QJsonObject child = c.toObject();
+		comms.push_back(Reddit_Comment(child["data"].toObject(),session));
+	}
 
-	down_votes = other.down_votes; //downs
-	up_votes = other.up_votes; //ups
-	score = other.score;
-	likes = other.likes;
-	num_comments = other.num_comments;
-	num_crossposts = other.num_crossposts;
-	num_reports = other.num_reports;
-	view_count = other.view_count;
-	return *this;
+	return comms;
 }
+
+//=================================================================================================
+// Line of Sanity
+// Below here is very long and repetitive stuff that is just straight ugly
+// Also, you can probably assume that below is correct unless reddit changes their API
+//=================================================================================================
 
 void Reddit_Post::parseJson(const QJsonObject &raw){
 	//yes, I hand typed all of this
@@ -74,6 +61,7 @@ void Reddit_Post::parseJson(const QJsonObject &raw){
 	approved_by = raw["approved_by"].toString();
 	archived = raw["archived"].toBool();
 	author = raw["author"].toString();
+	author_flair_css_class = raw["author_flair_css_class"].toString();
 	author_flair_text = raw["author_flair_text"].toString();
 	banned_at_utc = raw["banned_at_utc"].toDouble();
 	banned_by = raw["banned_by"].toString();
@@ -92,6 +80,7 @@ void Reddit_Post::parseJson(const QJsonObject &raw){
 	is_reddit_media_domain = raw["is_reddit_media_domain"].toBool();
 	is_self = raw["is_self"].toBool();
 	is_video = raw["is_video"].toBool();
+	link_flair_css_class = raw["link_flair_css_class"].toString();
 	link_flair_text = raw["link_flair_text"].toString();
 	locked = raw["locked"].toBool();
 	mod_note = raw["mod_note"].toString();
@@ -101,6 +90,7 @@ void Reddit_Post::parseJson(const QJsonObject &raw){
 	over_18 = raw["over_18"].toBool();
 	permalink = raw["permalink"].toString();
 	pinned = raw["pinned"].toBool();
+	post_hint = raw["post_hint"].toString();
 	quarantine = raw["pinned"].toBool();
 	removal_reason = raw["removal_reason"].toString();
 	saved = raw["saved"].toBool();
@@ -118,21 +108,119 @@ void Reddit_Post::parseJson(const QJsonObject &raw){
 	title = raw["title"].toString();
 	url = raw["url"].toString();
 	visited = raw["visited"].toBool();
+	whitelist_status = raw["whitelist_status"].toString();
 
 	down_votes = raw["downs"].toInt(); //downs
 	up_votes = raw["ups"].toInt(); //ups
 	score = raw["score"].toInt();
-	likes = raw["likes"].toInt();
 	num_comments = raw["num_comments"].toInt();
 	num_crossposts = raw["num_crossposts"].toInt();
 	num_reports = raw["num_reports"].toInt();
 	view_count = raw["view_count"].toInt();
+
+	//preview_images
+	//preview_images_blurred
+	parseJson_previewImages(raw);
+	parseJson_media(raw);
+
+	if(raw["likes"].isNull())
+		user_vote="";
+	else
+		raw["likes"].toBool() ? user_vote="up" : user_vote="down";
+}
+void Reddit_Post::parseJson_previewImages(const QJsonObject &raw){
+	if(raw["preview"].isObject()){
+		for(auto i : raw["preview"].toObject()["images"].toArray()){
+			QJsonObject im = i.toObject();
+			preview_images.push_back({});
+			for(auto res : im["resolutions"].toArray()){
+				QJsonObject ress = res.toObject();
+				preview_images.last().urls.push_back(fixUrl(ress["url"].toString()));
+				preview_images.last().height.push_back(ress["height"].toDouble());
+				preview_images.last().width.push_back(ress["width"].toDouble());
+			}
+			QJsonObject ress = im["source"].toObject();
+			preview_images.last().urls.push_back(fixUrl(ress["url"].toString()));
+			preview_images.last().height.push_back(ress["height"].toDouble());
+			preview_images.last().width.push_back(ress["width"].toDouble());
+
+			if(im.contains("variants") && im["variants"].toObject().contains("obfuscated")){
+				QJsonObject obf = im["variants"].toObject()["obfuscated"].toObject();
+				preview_images_blurred.push_back({});
+				for(auto res : obf["resolutions"].toArray()){
+					QJsonObject ress = res.toObject();
+					preview_images_blurred.last().urls.push_back(fixUrl(ress["url"].toString()));
+					preview_images_blurred.last().height.push_back(ress["height"].toDouble());
+					preview_images_blurred.last().width.push_back(ress["width"].toDouble());
+				}
+				QJsonObject ress = obf["source"].toObject();
+				preview_images_blurred.last().urls.push_back(fixUrl(ress["url"].toString()));
+				preview_images_blurred.last().height.push_back(ress["height"].toDouble());
+				preview_images_blurred.last().width.push_back(ress["width"].toDouble());
+			}
+		}
+	}
+}
+void Reddit_Post::parseJson_media(const QJsonObject &raw){
+	if(raw["secure_media"].isObject() || raw["media"].isObject()){
+		QJsonObject S;
+		raw["secure_media"].isObject()         ?
+			S = raw["secure_media"].toObject() :
+			S = raw["media"].toObject()		   ;
+		if(S.contains("oembed")){
+			media.type = S["type"].toString();
+			QJsonObject oembed = S["oembed"].toObject();
+			media.common.author_name = oembed["author_name"].toString();
+			media.common.author_url = oembed["author_url"].toString();
+			media.common.description = oembed["description"].toString();
+			media.common.height = oembed["height"].toDouble();
+			media.common.width = oembed["width"].toDouble();
+			media.common.html = oembed["html"].toString();
+			media.common.provider_name = oembed["provider_name"].toString();
+			media.common.provider_url = oembed["provider_url"].toString();
+			media.common.thumbnail_url = oembed["thumbnail_url"].toString();
+			media.common.thumbnail_height = oembed["thumbnail_height"].toDouble();
+			media.common.thumbnail_width = oembed["thumbnail_width"].toDouble();
+			media.common.title = oembed["title"].toString();
+			media.common.type = oembed["type"].toString();
+			media.common.url = oembed["url"].toString();
+			media.common.version = oembed["version"].toString();
+
+			QJsonObject med_embed;
+			raw["secure_media"].isObject()                       ?
+				med_embed = raw["secure_media_embed"].toObject() :
+				med_embed = raw["media_embed"].toObject()		 ;
+			media.common.content = med_embed["content"].toString();
+			media.common.media_domain_url = med_embed["media_domain_url"].toString();
+			media.common.scrolling = med_embed["scrolling"].toBool();
+		}
+		else if(S.contains("reddit_video")){
+			media.type="reddit_video";
+			QJsonObject red_vid = S["reddit_video"].toObject();
+			media.reddit_video.dash_url = red_vid["dash_url"].toString();
+			media.reddit_video.fallback_url = red_vid["fallback_url"].toString();
+			media.reddit_video.duration = red_vid["duration"].toDouble();
+			media.reddit_video.height = red_vid["height"].toDouble();
+			media.reddit_video.width = red_vid["width"].toDouble();
+			media.reddit_video.hls_url = red_vid["hls_url"].toString();
+			media.reddit_video.scrubber_media_url = red_vid["scrubber_media_url"].toString();
+			media.reddit_video.is_gif = red_vid["is_gif"].toBool();
+			media.reddit_video.transcoding_status = red_vid["transcoding_status"].toString();
+		}
+		else{
+			if(raw["secure_media"].isObject())
+				printf("unknown secure_media object\n");
+			else
+				printf("unknown media object\n");
+			debug_parse(S,"\t");
+		}
+	}
 }
 
 void Reddit_Post::debug_print(){
 	printf("title = %s\n",title.toUtf8().data());
 	printf("self text = \n%s\n",selftext.toUtf8().data());
-	//printf("\tselftext html = %s\n",selftext_html.toUtf8().data());
+	//printf("\tselftext html = %s\n",selftext_html.toUtf8().data()); // just a verbose version of the above
 	printf("\tapproved time = %f\n",approved_at_utc);
 	printf("\tapproved by = %s\n",approved_by.toUtf8().data());
 	printf("\tarchived = %s\n",archived?"true":"false");
@@ -164,6 +252,7 @@ void Reddit_Post::debug_print(){
 	printf("\tover 18 = %s\n",over_18?"true":"false");
 	printf("\tpermalink = %s\n",permalink.toUtf8().data());
 	printf("\tpinned = %s\n",pinned?"true":"false");
+	printf("\tpost hint = %s\n",post_hint.toUtf8().data());
 	printf("\tquarantine = %s\n",quarantine?"true":"false");
 	printf("\tremoval reason = %s\n",removal_reason.toUtf8().data());
 	printf("\tsaved = %s\n",saved?"true":"false");
@@ -176,14 +265,59 @@ void Reddit_Post::debug_print(){
 	printf("\tthumbnail = %s\n",thumbnail.toUtf8().data());
 	printf("\tthumbnail size = %f x %f\n",thumbnail_width,thumbnail_height);
 	printf("\turl = %s\n",url.toUtf8().data());
+	printf("\tuser vote = %s\n",user_vote.toUtf8().data());
 	printf("\tvisited = %s\n",visited?"true":"false");
+	printf("\twhitelist status = %s\n",whitelist_status.toUtf8().data());
 	printf("\n");
 	printf("\t%d down\n",down_votes);
 	printf("\t%d up\n",up_votes);
-	printf("\t%d likes\n",likes);
 	printf("\t%d score\n",score);
 	printf("\t%d comments\n",num_comments);
 	printf("\t%d crossposts\n",num_crossposts);
 	printf("\t%d reports\n",num_reports);
 	printf("\t%d views\n",view_count);
+}
+void Reddit_Post::debug_parse(const QJsonObject &raw, QString pad){
+	for(QString key : raw.keys()){
+		if(raw[key].isBool()){
+			printf("%s%s : bool : %s\n",pad.toUtf8().data(),key.toUtf8().data(),raw[key].toBool()?"true":"false");
+		}else if(raw[key].isDouble()){
+			printf("%s%s : double : %f\n",pad.toUtf8().data(),key.toUtf8().data(),raw[key].toDouble());
+		}else if(raw[key].isNull()){
+			printf("%s%s : null : null\n",pad.toUtf8().data(),key.toUtf8().data());
+		}else if(raw[key].isString()){
+			QString temp = raw[key].toString().left(200);
+			printf("%s%s : string : %s\n",pad.toUtf8().data(),key.toUtf8().data(),temp.toUtf8().data());
+		}else if(raw[key].isUndefined()){
+			printf("%s%s : undefined : undefined\n",pad.toUtf8().data(),key.toUtf8().data());
+		}else if(raw[key].isArray()){
+			printf("%s%s : array : []\n",pad.toUtf8().data(),key.toUtf8().data());
+			debug_parse(raw[key].toArray(),pad+"\t");
+		}else if(raw[key].isObject()){
+			printf("%s%s : object : {}\n",pad.toUtf8().data(),key.toUtf8().data());
+			debug_parse(raw[key].toObject(),pad+"\t");
+		}
+	}
+}
+void Reddit_Post::debug_parse(const QJsonArray &arr, QString pad){
+	for(int x=0; x<arr.size(); x++){
+		if(arr[x].isBool()){
+			printf("%s%d : bool : %s\n",pad.toUtf8().data(),x,arr[x].toBool()?"true":"false");
+		}else if(arr[x].isDouble()){
+			printf("%s%d : double : %f\n",pad.toUtf8().data(),x,arr[x].toDouble());
+		}else if(arr[x].isNull()){
+			printf("%s%d : null : null\n",pad.toUtf8().data(),x);
+		}else if(arr[x].isString()){
+			QString temp = arr[x].toString().left(200);
+			printf("%s%d : string : %s\n",pad.toUtf8().data(),x,temp.toUtf8().data());
+		}else if(arr[x].isUndefined()){
+			printf("%s%d : undefined : undefined\n",pad.toUtf8().data(),x);
+		}else if(arr[x].isArray()){
+			printf("%s%d : array : []\n",pad.toUtf8().data(),x);
+			debug_parse(arr[x].toArray(),pad+"\t");
+		}else if(arr[x].isObject()){
+			printf("%s%d : object : {}\n",pad.toUtf8().data(),x);
+			debug_parse(arr[x].toObject(),pad+"\t");
+		}
+	}
 }
