@@ -54,7 +54,9 @@ public:
 	Reddit_Comment(const QString &url, RedditSession* sess);
 	Reddit_Comment(const QJsonObject &raw,RedditSession* sess);
 	void parseJson(const QJsonObject &raw);
+	Reddit_Comment makeNewReply(QString body);
 public:
+	QString scrub_url(const QString &url);
 	static void debug_parse(const QJsonObject &raw, QString pad="");
 	static void debug_parse(const QJsonArray &arr, QString pad="");
 };

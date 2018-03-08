@@ -119,9 +119,11 @@ public: //normally used methods
 	Reddit_Post(const QJsonObject &raw,RedditSession* sess);
 	void parseJson(const QJsonObject &raw);
 	QList<Reddit_Comment> getComments();
+	Reddit_Comment makeNewComment(QString body);
 
 protected: // things that are usually internal helper functions
-	QString fixUrl(QString);
+	QString fixUrl(QString); // gets rid of &amp; and stuff
+	QString scrub_url(const QString &url); // turns http://www.reddit.com into http://oauth.reddit.com
 	void parseJson_previewImages(const QJsonObject &raw);
 	void parseJson_media(const QJsonObject &raw);
 public: // debug stuff

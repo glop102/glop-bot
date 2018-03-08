@@ -11,6 +11,20 @@ GlopBot::GlopBot() : QObject(0){
 	QMetaObject::invokeMethod(this,"mainProcess",Qt::QueuedConnection);
 }
 
+void small_test_recursive_comment_funct(QList<Reddit_Comment> coms){
+	for(auto com : coms){
+		com.makeNewReply("REPLY TO ALL THE THINGS!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+						 "\n"
+						 ">Pretend Quote\n"
+						 "\n"
+						 "`code stuff`\n"
+						 "\n"
+						 "^^^tiny ^^text\n"
+						);
+		small_test_recursive_comment_funct(com.replies);
+	}
+}
+
 void GlopBot::mainProcess(){
 	if( session == NULL){
 		session = new RedditSession;
@@ -33,13 +47,35 @@ void GlopBot::mainProcess(){
 	//for(auto k : p){
 	//	printf("%s\n\t%s\n",k.title.toUtf8().data(),k.url.toUtf8().data());
 	//}
+	//test->makeNewPost_text("Simple Post Test","I like hard coded strings, how about you?",false,false,true,"Random Flair Text","Random ID");
+	//test->makeNewPost_text("Title","Text");
+	//test->makeNewPost_link("Google","https://google.com");
 
 	//test->cacheSubredditStats();
 	//printf("%d current users\n",test->accounts_active);
 	//printf("%d subscribers\n",test->subscribers);
 
 	//p[0].getComments();
-	Reddit_Comment com("https://oauth.reddit.com/r/anime/comments/82aefz/the_winter_2018_midseason_survey_results/dv8lmsq/",session);
+	//Reddit_Comment com("https://oauth.reddit.com/r/anime/comments/82aefz/the_winter_2018_midseason_survey_results/dv8lmsq/",session);
+
+	//Reddit_Account me(session);
+	//me.cacheCurrentAccountInfo();
+
+	//Reddit_Post post("/r/bottest/comments/82zexp/google/",session);
+	//post.makeNewComment("Do I Need to encode special chars? this&that");
+
+	//Reddit_Comment com1("https://oauth.reddit.com/r/bottest/comments/82zexp/google/dve0c8r/",session);
+	//Reddit_Comment com1("/r/bottest/comments/82zexp/google/dve0c8r/",session);
+	//com1.makeNewReply("More Testing !!! るようにお願い申し上げます。当サブ ...");
+
+	Reddit_Subreddit *test = new Reddit_Subreddit(session,"bottest");
+	QList<Reddit_Post> posts = test->getPosts(10);
+	for(auto post : posts){
+		if(post.author == "glop102"){
+			QList<Reddit_Comment> coms =  post.getComments();
+			small_test_recursive_comment_funct(coms);
+		}
+	}
 	exit(0);
 }
 

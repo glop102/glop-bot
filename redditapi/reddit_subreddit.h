@@ -22,8 +22,12 @@ public:
 	explicit Reddit_Subreddit(RedditSession* session, QString subreddit);
 	//Reddit_Subreddit(const Reddit_Subreddit& other);
 	//Reddit_Subreddit& operator=(const Reddit_Subreddit& other);
+
 	//after is what post to you want the listing to start after
 	QList<Reddit_Post> getPosts(int limit=100, QString after_id="", QString before_id="");
+
+	Reddit_Post makeNewPost_text(QString title,QString body,bool nsfw=false,bool spoiler=false,bool resubmit=true,QString flair_text="",QString flair_id="",bool ad=false);
+	Reddit_Post makeNewPost_link(QString title,QString url,bool nsfw=false,bool spoiler=false,bool resubmit=true,QString flair_text="",QString flair_id="",bool ad=false);
 
 	// by default, we do not use up a second request to get stats about teh subreddit, and so the variables are empty
 	void cacheSubredditStats();
@@ -68,8 +72,7 @@ public:
 	QString title;
 	QString url;
 	bool user_can_flair_in_sr,user_flair_enabled_in_sr;
-	//user_flair_css_class null
-	//user_flair_text null
+	QString user_flair_css_class,user_flair_text;
 	bool user_has_favorited;
 	bool user_is_banned;
 	bool user_is_contributor;

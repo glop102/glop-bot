@@ -5,15 +5,12 @@ Reddit_Post::Reddit_Post(RedditSession *sess){
 }
 Reddit_Post::Reddit_Post(const QString &url, RedditSession *sess){
 	session = sess;
-	QString scrubbed_url = url;
-	if(url.indexOf("http")!=0){
-		scrubbed_url = "https://oauth.reddit.com/";
-	}
+	QString scrubbed_url = scrub_url(url);
 	auto reply = session->makeGETrequest(scrubbed_url);
 	reply->deleteLater();
 	QJsonDocument top = QJsonDocument::fromJson(reply->readAll());
 	if(! top.isArray()){
-		printf("url seemes to not be correct\n");
+		printf("url seemes to not be correct\n%s\n\n",scrubbed_url.toUtf8().data());
 		return;
 	}
 	parseJson(top.array()[0].toObject()["data"].toObject()["children"].toArray()[0].toObject()["data"].toObject());
@@ -46,6 +43,45 @@ QList<Reddit_Comment> Reddit_Post::getComments(){
 	}
 
 	return comms;
+}
+
+Reddit_Comment Reddit_Post::makeNewComment(QString body){
+	QString post = "";
+	post+="api_type=json";
+	post+="&text="+body.toUtf8().toPercentEncoding();
+	post+="&thing_id="+name;
+	//printf("%s\n",post.toUtf8().data());
+
+	auto reply = session->makePOSTrequest("https://oauth.reddit.com/api/comment",post);
+	reply->deleteLater();
+	auto data = reply->readAll();
+	//printf("%s\n",data.data());
+	QJsonObject top = QJsonDocument::fromJson(data).object();
+	if(top["json"].toObject()["errors"].toArray().size() == 0){
+		top = top["json"].toObject()["data"].toObject();
+		top = top["things"].toArray()[0].toObject();
+		return Reddit_Comment(top["data"].toObject(),session);
+	}else{
+		QJsonArray errs = top["json"].toObject()["errors"].toArray();
+		throw errs[0].toArray()[0];
+	}
+}
+
+QString Reddit_Post::scrub_url(const QString &url){
+	QString scrub = url;
+//	scrub.replace("www.reddit.com","oauth.reddit.com");
+//	if(url.indexOf("http")!=0 && url.indexOf("oauth.reddit.com") == -1){
+//		scrub = "https://oauth.reddit.com/" + scrub;
+//	}else if(url.indexOf("http")!=0){
+//		scrub = "https://" + scrub;
+//	}
+	int loc = scrub.indexOf("reddit.com");
+	if(loc >=0 && loc <	15){ // length of "https://oauth."
+		loc += 10; // length of "reddit.com"
+		scrub = scrub.mid(loc);
+	}
+	scrub = "https://oauth.reddit.com/" + scrub;
+	return scrub;
 }
 
 //=================================================================================================

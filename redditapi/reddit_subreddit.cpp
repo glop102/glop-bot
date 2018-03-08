@@ -55,6 +55,79 @@ QList<Reddit_Post> Reddit_Subreddit::getPosts(int limit, QString after, QString 
 	return posts;
 }
 
+Reddit_Post Reddit_Subreddit::makeNewPost_text(QString title, QString body, bool nsfw, bool spoiler, bool resubmit, QString flair_text, QString flair_id, bool ad){
+	//cacheSubredditStats();
+	//printf("%s\n",subreddit.toUtf8().data());
+	QString post = "";
+	post+="api_type=json";
+	post+="&extension=json";
+	post+="&kind=self";
+	post+="&sendreplies=true";
+	post+="&sr="+subreddit;
+	post+="&title="+title.toLocal8Bit().toPercentEncoding();
+	post+="&text="+body.toLocal8Bit().toPercentEncoding();
+	if(nsfw) post+="&nsfw=true";
+	post+=resubmit?"&resubmit=true":"&resubmit=false";
+	if(spoiler)post+="&spoiler=true";
+	if(flair_text != "")
+		post+="&flair_text="+flair_text;
+	if(flair_id != "")
+		post+="&flair_id="+flair_id;
+	if(ad) post+="&ad=true";
+	printf("%s\n",post.toUtf8().data());
+
+	auto reply = session->makePOSTrequest("https://oauth.reddit.com/api/submit",post);
+	reply->deleteLater();
+	auto data = reply->readAll();
+	//printf("%s\n",data.data());
+	QJsonObject top = QJsonDocument::fromJson(data).object();
+	if(top["json"].toObject()["errors"].toArray().size() == 0){
+		QString url = top["json"].toObject()["data"].toObject()["url"].toString();
+		//printf("%s\n",url.toUtf8().data());
+		url = url.mid(22); //strip the https://www.reddit.com
+		url = url.left(url.size() - 5); // strip the .json
+		return Reddit_Post(url,session);
+	}else{
+		QJsonArray errs = top["json"].toObject()["errors"].toArray();
+		throw errs[0].toArray()[0];
+	}
+}
+Reddit_Post Reddit_Subreddit::makeNewPost_link(QString title, QString url, bool nsfw, bool spoiler, bool resubmit, QString flair_text, QString flair_id, bool ad){
+	QString post = "";
+	post+="api_type=json";
+	post+="&extension=json";
+	post+="&kind=link";
+	post+="&sendreplies=true";
+	post+="&sr="+subreddit;
+	post+="&title="+title.toLocal8Bit().toPercentEncoding();
+	post+="&url="+url.toLocal8Bit().toPercentEncoding();
+	if(nsfw) post+="&nsfw=true";
+	post+=resubmit?"&resubmit=true":"&resubmit=false";
+	if(spoiler)post+="&spoiler=true";
+	if(flair_text != "")
+		post+="&flair_text="+flair_text;
+	if(flair_id != "")
+		post+="&flair_id="+flair_id;
+	if(ad) post+="&ad=true";
+	printf("%s\n",post.toUtf8().data());
+
+	auto reply = session->makePOSTrequest("https://oauth.reddit.com/api/submit",post);
+	reply->deleteLater();
+	auto data = reply->readAll();
+	//printf("%s\n",data.data());
+	QJsonObject top = QJsonDocument::fromJson(data).object();
+	if(top["json"].toObject()["errors"].toArray().size() == 0){
+		QString url = top["json"].toObject()["data"].toObject()["url"].toString();
+		//printf("%s\n",url.toUtf8().data());
+		url = url.mid(22); //strip the https://www.reddit.com
+		url = url.left(url.size() - 5); // strip the .json
+		return Reddit_Post(url,session);
+	}else{
+		QJsonArray errs = top["json"].toObject()["errors"].toArray();
+		throw errs[0].toArray()[0];
+	}
+}
+
 void Reddit_Subreddit::cacheSubredditStats(){
 	auto reply = session->makeGETrequest("https://oauth.reddit.com/r/"+subreddit+"/about");
 	reply->deleteLater();
@@ -103,6 +176,8 @@ void Reddit_Subreddit::cacheSubredditStats(){
 	subscribers = raw["subscribers"].toInt();
 	title = raw["title"].toString();
 	url = raw["url"].toString();
+	user_flair_css_class = raw["user_flair_css_class"].toString();
+	user_flair_text = raw["user_flair_text"].toString();
 	user_can_flair_in_sr = raw["user_can_flair_in_sr"].toBool();
 	user_flair_enabled_in_sr = raw["user_flair_enabled_in_sr"].toBool();
 	user_has_favorited = raw["user_has_favorited"].toBool();

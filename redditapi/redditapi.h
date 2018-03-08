@@ -11,6 +11,7 @@
 #include "reddit_common.h"
 #include "reddit_subreddit.h"
 #include "reddit_post.h"
+#include "reddit_account.h"
 
 /* object types that can show up
  * t1 comment
