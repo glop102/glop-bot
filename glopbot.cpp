@@ -1,4 +1,5 @@
 #include "glopbot.h"
+#include <tuple>
 
 GlopBot::GlopBot() : QObject(0){
 	//timer to run our bot
@@ -30,6 +31,13 @@ void GlopBot::mainProcess(){
 		session = new RedditSession;
 		session->parseSettings();
 	}
+	//std::tuple<int,int> a;
+	//a = std::make_tuple(5,10);
+	//auto b = std::get<0>(a);
+	//printf("%d\n",b);
+	//int c,d;
+	//std::tie(c,d) = a;
+	//printf("%d  %d\n",c,d);
 
 	//ra->testFunction();
 	//QByteArray temp = session->makeGETrequest("https://oauth.reddit.com/r/bottest/about")->readAll();
@@ -68,14 +76,29 @@ void GlopBot::mainProcess(){
 	//Reddit_Comment com1("/r/bottest/comments/82zexp/google/dve0c8r/",session);
 	//com1.makeNewReply("More Testing !!! るようにお願い申し上げます。当サブ ...");
 
-	Reddit_Subreddit *test = new Reddit_Subreddit(session,"bottest");
-	QList<Reddit_Post> posts = test->getPosts(10);
-	for(auto post : posts){
-		if(post.author == "glop102"){
-			QList<Reddit_Comment> coms =  post.getComments();
-			small_test_recursive_comment_funct(coms);
-		}
-	}
+	//Reddit_Subreddit *test = new Reddit_Subreddit(session,"bottest");
+	//QList<Reddit_Post> posts = test->getPosts(10);
+	//for(auto post : posts){
+	//	if(post.author == "glop102"){
+	//		QList<Reddit_Comment> coms =  post.getComments();
+	//		small_test_recursive_comment_funct(coms);
+	//	}
+	//}
+
+	//Reddit_Account acc(session);
+	//acc.cacheCurrentAccountInfo();
+	//acc.cacheUserAccountInfo("crazygooddude");
+	//auto coms = acc.getUserComments("glop102",5);
+	//auto coms = acc.getUserComments("crazygooddude",5);
+	//for(auto com: coms){
+	//	printf("%s\n",com.body.toUtf8().data());
+	//}
+	//auto posts = acc.getUserPosts("glop102",100,"new");
+	//auto posts = acc.getUserUpvotedPosts("glop102",100,"new");
+	//auto posts = acc.getUserDownvotedPosts("glop102",100,"new");
+	//for(auto post : posts){
+	//	printf("%s\n",post.title.toUtf8().data());
+	//}
 	exit(0);
 }
 
